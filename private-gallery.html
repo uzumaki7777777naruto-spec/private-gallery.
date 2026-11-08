@@ -1,0 +1,1779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0D0B33">
+<title>Private Gallery</title>
+<style>
+  :root {
+    --midnight: #0D0B33;
+    --plum: #4C2F6F;
+    --periwinkle: #52489F;
+    --orchid: #C266A7;
+    --lilac: #E7C8E7;
+    --soft-white: rgba(231, 200, 231, 0.92);
+    --glass: rgba(76, 47, 111, 0.35);
+    --glass-border: rgba(194, 102, 167, 0.25);
+    --shadow: 0 8px 32px rgba(13, 11, 51, 0.6);
+    --radius: 18px;
+    --radius-sm: 12px;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html, body {
+    height: 100%;
+    overflow-x: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    background: var(--midnight);
+    color: var(--lilac);
+    overscroll-behavior: none;
+  }
+
+  /* Futuristic romantic SVG background */
+  .bg-svg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .bg-svg svg {
+    width: 100%;
+    height: 100%;
+    opacity: 0.85;
+  }
+
+  /* Main app shell */
+  .app {
+    position: relative;
+    z-index: 1;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: env(safe-area-inset-bottom, 20px);
+  }
+
+  /* Header */
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: linear-gradient(180deg, rgba(13,11,51,0.95) 0%, rgba(13,11,51,0.75) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--glass-border);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .logo {
+    font-size: 1.15rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    background: linear-gradient(135deg, var(--lilac), var(--orchid));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .icon-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid var(--glass-border);
+    background: var(--glass);
+    color: var(--lilac);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1.1rem;
+  }
+
+  .icon-btn:active {
+    transform: scale(0.92);
+    background: rgba(194, 102, 167, 0.35);
+  }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 6px;
+    padding: 12px 16px 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .tabs::-webkit-scrollbar { display: none; }
+
+  .tab {
+    flex-shrink: 0;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px solid var(--glass-border);
+    background: var(--glass);
+    color: var(--lilac);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+
+  .tab.active {
+    background: linear-gradient(135deg, var(--periwinkle), var(--orchid));
+    border-color: transparent;
+    color: white;
+    box-shadow: 0 4px 16px rgba(194, 102, 167, 0.35);
+  }
+
+  /* Paste zone - more reliable on mobile */
+  .paste-zone-wrap {
+    padding: 8px 16px 12px;
+  }
+
+  .paste-zone {
+    background: var(--glass);
+    border: 1.5px dashed var(--glass-border);
+    border-radius: var(--radius);
+    padding: 16px;
+    min-height: 72px;
+    color: var(--lilac);
+    font-size: 0.9rem;
+    outline: none;
+    transition: all 0.2s;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    position: relative;
+  }
+
+  .paste-zone:focus,
+  .paste-zone.active {
+    border-color: var(--orchid);
+    background: rgba(194, 102, 167, 0.15);
+  }
+
+  .paste-zone .hint {
+    opacity: 0.6;
+    font-size: 0.85rem;
+    line-height: 1.4;
+  }
+
+  .paste-zone .hint strong {
+    color: var(--orchid);
+    opacity: 1;
+  }
+
+  .paste-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    width: 100%;
+  }
+
+  .paste-btn {
+    flex: 1;
+    background: linear-gradient(135deg, var(--periwinkle), var(--orchid));
+    border: none;
+    border-radius: 999px;
+    padding: 12px 16px;
+    color: white;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+
+  .paste-btn.secondary {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    color: var(--lilac);
+  }
+
+  .paste-btn:active {
+    transform: scale(0.96);
+  }
+
+  /* Hidden real input for links */
+  .hidden-link-input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    height: 0;
+    width: 0;
+  }
+
+  /* Content area */
+  .content {
+    flex: 1;
+    padding: 0 10px 100px;
+    position: relative;
+  }
+
+  /* Masonry / Pinterest style */
+  .masonry {
+    column-count: 2;
+    column-gap: 10px;
+  }
+
+  @media (min-width: 500px) {
+    .masonry { column-count: 3; }
+  }
+
+  .pin {
+    break-inside: avoid;
+    margin-bottom: 10px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    position: relative;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+
+  .pin:active {
+    transform: scale(0.98);
+  }
+
+  .pin img, .pin video {
+    width: 100%;
+    height: auto;
+    display: block;
+    vertical-align: middle;
+  }
+
+  .pin-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(0deg, rgba(13,11,51,0.7) 0%, transparent 40%);
+    opacity: 0;
+    transition: opacity 0.2s;
+    display: flex;
+    align-items: flex-end;
+    padding: 10px;
+    gap: 6px;
+  }
+
+  .pin:active .pin-overlay,
+  .pin.show-actions .pin-overlay {
+    opacity: 1;
+  }
+
+  .pin-actions {
+    display: flex;
+    gap: 6px;
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .pin-action {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(13,11,51,0.75);
+    border: 1px solid var(--glass-border);
+    color: var(--lilac);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    cursor: pointer;
+  }
+
+  .pin-action.favorited {
+    color: #ff6b9d;
+  }
+
+  /* Normal grid view */
+  .grid-normal {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  @media (min-width: 500px) {
+    .grid-normal { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  .grid-normal .pin {
+    aspect-ratio: 1;
+  }
+
+  .grid-normal .pin img,
+  .grid-normal .pin video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* Empty state */
+  .empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: rgba(231, 200, 231, 0.5);
+  }
+
+  .empty-icon {
+    font-size: 3rem;
+    margin-bottom: 12px;
+    opacity: 0.6;
+  }
+
+  .empty h3 {
+    font-weight: 500;
+    margin-bottom: 6px;
+    color: var(--lilac);
+  }
+
+  /* Video links section */
+  .link-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 4px 6px;
+  }
+
+  .link-card {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: relative;
+  }
+
+  .link-card .label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--orchid);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+
+  .link-card .url {
+    font-size: 0.9rem;
+    color: var(--lilac);
+    word-break: break-all;
+    line-height: 1.4;
+  }
+
+  .link-card .actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+  }
+
+  .link-btn {
+    flex: 1;
+    padding: 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--glass-border);
+    background: rgba(82, 72, 159, 0.4);
+    color: var(--lilac);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: center;
+  }
+
+  .link-btn.primary {
+    background: linear-gradient(135deg, var(--periwinkle), var(--orchid));
+    border: none;
+    color: white;
+  }
+
+  /* Bottom nav */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: linear-gradient(0deg, rgba(13,11,51,0.97) 0%, rgba(13,11,51,0.85) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--glass-border);
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    justify-content: space-around;
+    gap: 4px;
+  }
+
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 6px 12px;
+    border-radius: 12px;
+    color: rgba(231, 200, 231, 0.55);
+    font-size: 0.7rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-width: 64px;
+  }
+
+  .nav-item.active {
+    color: var(--orchid);
+    background: rgba(194, 102, 167, 0.12);
+  }
+
+  .nav-item .icon {
+    font-size: 1.35rem;
+  }
+
+  /* Lightbox / Viewer */
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(13, 11, 51, 0.96);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    touch-action: none;
+  }
+
+  .lightbox.open {
+    display: flex;
+  }
+
+  .lightbox-content {
+    max-width: 100%;
+    max-height: 85vh;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .lightbox-content img,
+  .lightbox-content video {
+    max-width: 100%;
+    max-height: 85vh;
+    object-fit: contain;
+    display: block;
+    transform-origin: center center;
+    transition: transform 0.05s linear;
+  }
+
+  .lightbox-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    color: var(--lilac);
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    cursor: pointer;
+  }
+
+  .lightbox-actions {
+    position: absolute;
+    bottom: 30px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    z-index: 10;
+  }
+
+  .lightbox-actions .icon-btn {
+    width: 48px;
+    height: 48px;
+    font-size: 1.2rem;
+  }
+
+  /* Modals */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 900;
+    background: rgba(13, 11, 51, 0.75);
+    backdrop-filter: blur(8px);
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+  }
+
+  .modal-overlay.open {
+    display: flex;
+  }
+
+  .modal {
+    width: 100%;
+    max-width: 480px;
+    background: linear-gradient(180deg, #1a153f 0%, var(--midnight) 100%);
+    border-top: 1px solid var(--glass-border);
+    border-radius: 24px 24px 0 0;
+    padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px));
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+
+  .modal-handle {
+    width: 40px;
+    height: 4px;
+    background: rgba(231, 200, 231, 0.3);
+    border-radius: 2px;
+    margin: 0 auto 16px;
+  }
+
+  .modal h3 {
+    font-size: 1.15rem;
+    margin-bottom: 16px;
+    font-weight: 600;
+  }
+
+  .modal-input {
+    width: 100%;
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    color: var(--lilac);
+    font-size: 1rem;
+    margin-bottom: 12px;
+    outline: none;
+  }
+
+  .modal-input:focus {
+    border-color: var(--orchid);
+  }
+
+  .modal-btns {
+    display: flex;
+    gap: 10px;
+    margin-top: 8px;
+  }
+
+  .modal-btn {
+    flex: 1;
+    padding: 14px;
+    border-radius: var(--radius-sm);
+    border: none;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .modal-btn.cancel {
+    background: var(--glass);
+    color: var(--lilac);
+    border: 1px solid var(--glass-border);
+  }
+
+  .modal-btn.confirm {
+    background: linear-gradient(135deg, var(--periwinkle), var(--orchid));
+    color: white;
+  }
+
+  /* Album list */
+  .album-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .album-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+
+  .album-item:active {
+    background: rgba(194, 102, 167, 0.2);
+  }
+
+  .album-item .name {
+    font-weight: 500;
+  }
+
+  .album-item .count {
+    font-size: 0.8rem;
+    color: rgba(231, 200, 231, 0.5);
+  }
+
+  /* Menu dropdown */
+  .menu-dropdown {
+    position: absolute;
+    top: 56px;
+    right: 12px;
+    background: #1a153f;
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm);
+    padding: 8px 0;
+    min-width: 180px;
+    z-index: 200;
+    display: none;
+    box-shadow: var(--shadow);
+  }
+
+  .menu-dropdown.open {
+    display: block;
+  }
+
+  .menu-item {
+    padding: 12px 18px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .menu-item:active {
+    background: rgba(194, 102, 167, 0.2);
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(26, 21, 63, 0.95);
+    border: 1px solid var(--orchid);
+    color: var(--lilac);
+    padding: 12px 22px;
+    border-radius: 999px;
+    font-size: 0.9rem;
+    z-index: 2000;
+    opacity: 0;
+    transition: all 0.3s ease;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Floating add button */
+  .fab {
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--periwinkle), var(--orchid));
+    border: none;
+    color: white;
+    font-size: 1.6rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 24px rgba(194, 102, 167, 0.45);
+    z-index: 90;
+    cursor: pointer;
+  }
+
+  .fab:active {
+    transform: scale(0.92);
+  }
+
+  /* Hidden file input */
+  #fileInput {
+    display: none;
+  }
+
+  /* Utility */
+  .hidden { display: none !important; }
+  .section { display: none; }
+  .section.active { display: block; }
+</style>
+</head>
+<body>
+  <!-- Soft futuristic SVG background -->
+  <div class="bg-svg">
+    <svg viewBox="0 0 400 800" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <radialGradient id="g1" cx="30%" cy="20%" r="50%">
+          <stop offset="0%" stop-color="#4C2F6F" stop-opacity="0.55"/>
+          <stop offset="100%" stop-color="#0D0B33" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="g2" cx="80%" cy="60%" r="45%">
+          <stop offset="0%" stop-color="#C266A7" stop-opacity="0.25"/>
+          <stop offset="100%" stop-color="#0D0B33" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="g3" cx="50%" cy="90%" r="40%">
+          <stop offset="0%" stop-color="#52489F" stop-opacity="0.35"/>
+          <stop offset="100%" stop-color="#0D0B33" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="line" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#C266A7" stop-opacity="0.15"/>
+          <stop offset="100%" stop-color="#52489F" stop-opacity="0.05"/>
+        </linearGradient>
+      </defs>
+      <rect width="400" height="800" fill="#0D0B33"/>
+      <ellipse cx="120" cy="160" rx="180" ry="200" fill="url(#g1)"/>
+      <ellipse cx="320" cy="480" rx="160" ry="180" fill="url(#g2)"/>
+      <ellipse cx="200" cy="720" rx="200" ry="160" fill="url(#g3)"/>
+      <!-- Soft floating shapes -->
+      <circle cx="80" cy="300" r="40" fill="#C266A7" opacity="0.06"/>
+      <circle cx="340" cy="200" r="60" fill="#52489F" opacity="0.07"/>
+      <circle cx="60" cy="600" r="50" fill="#4C2F6F" opacity="0.08"/>
+      <path d="M0 400 Q100 350 200 400 T400 380" stroke="url(#line)" stroke-width="1.5" fill="none"/>
+      <path d="M0 500 Q150 460 300 510 T400 490" stroke="url(#line)" stroke-width="1" fill="none"/>
+    </svg>
+  </div>
+
+  <div class="app">
+    <header>
+      <div class="logo">✦ Aura</div>
+      <div class="header-actions">
+        <button class="icon-btn" id="viewToggleBtn" title="Toggle view">▦</button>
+        <button class="icon-btn" id="menuBtn" title="Menu">⋯</button>
+      </div>
+    </header>
+
+    <!-- Dropdown menu -->
+    <div class="menu-dropdown" id="menuDropdown">
+      <div class="menu-item" data-action="toggle-view">
+        <span>▦</span> <span id="viewLabel">Switch to Grid View</span>
+      </div>
+      <div class="menu-item" data-action="export">
+        <span>↗</span> Export Data
+      </div>
+      <div class="menu-item" data-action="import">
+        <span>↙</span> Import Data
+      </div>
+      <div class="menu-item" data-action="clear">
+        <span>✕</span> Clear All
+      </div>
+    </div>
+
+    <!-- Tabs for filtering -->
+    <div class="tabs" id="tabs">
+      <div class="tab active" data-filter="all">All</div>
+      <div class="tab" data-filter="favorites">Favorites</div>
+      <div class="tab" data-filter="albums">Albums</div>
+      <div class="tab" data-filter="videos">Videos</div>
+      <div class="tab" data-filter="links">Links</div>
+    </div>
+
+    <!-- Paste zone - works better on mobile -->
+    <div class="paste-zone-wrap">
+      <div class="paste-zone" id="pasteZone" contenteditable="true" spellcheck="false">
+        <div class="hint">
+          <strong>Tap here</strong> then long-press → Paste<br>
+          or use the buttons below
+        </div>
+      </div>
+      <div class="paste-actions">
+        <button class="paste-btn secondary" id="addLinkBtn">Add Link</button>
+        <button class="paste-btn" id="addFileBtn">Add Photo / Video</button>
+      </div>
+      <input type="text" class="hidden-link-input" id="linkInput" placeholder="Paste link here">
+    </div>
+
+    <!-- Main content sections -->
+    <div class="content">
+      <!-- All / Favorites masonry -->
+      <div class="section active" id="section-all">
+        <div id="masonryContainer" class="masonry"></div>
+        <div class="empty hidden" id="emptyAll">
+          <div class="empty-icon">✦</div>
+          <h3>Your gallery is empty</h3>
+          <p>Tap the box above and paste, or use the buttons</p>
+        </div>
+      </div>
+
+      <!-- Albums -->
+      <div class="section" id="section-albums">
+        <div class="album-list" id="albumList"></div>
+        <button class="modal-btn confirm" style="width:100%;margin-top:8px" id="createAlbumBtn">+ Create New Album</button>
+        <div class="empty hidden" id="emptyAlbums">
+          <div class="empty-icon">📁</div>
+          <h3>No albums yet</h3>
+          <p>Create one to organize your collection</p>
+        </div>
+      </div>
+
+      <!-- Videos (direct files) -->
+      <div class="section" id="section-videos">
+        <div id="videosContainer" class="masonry"></div>
+        <div class="empty hidden" id="emptyVideos">
+          <div class="empty-icon">▶</div>
+          <h3>No videos yet</h3>
+          <p>Paste or add video files here</p>
+        </div>
+      </div>
+
+      <!-- Video Links -->
+      <div class="section" id="section-links">
+        <div class="link-cards" id="linksContainer"></div>
+        <div class="empty hidden" id="emptyLinks">
+          <div class="empty-icon">🔗</div>
+          <h3>No links yet</h3>
+          <p>Paste video or media links here</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Floating add -->
+    <button class="fab" id="fabBtn">+</button>
+
+    <!-- Bottom nav -->
+    <nav class="bottom-nav">
+      <div class="nav-item active" data-nav="all">
+        <span class="icon">⌂</span>
+        <span>Home</span>
+      </div>
+      <div class="nav-item" data-nav="favorites">
+        <span class="icon">♥</span>
+        <span>Favorites</span>
+      </div>
+      <div class="nav-item" data-nav="albums">
+        <span class="icon">▣</span>
+        <span>Albums</span>
+      </div>
+      <div class="nav-item" data-nav="videos">
+        <span class="icon">▶</span>
+        <span>Videos</span>
+      </div>
+      <div class="nav-item" data-nav="links">
+        <span class="icon">🔗</span>
+        <span>Links</span>
+      </div>
+    </nav>
+  </div>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox">
+    <button class="lightbox-close" id="lightboxClose">✕</button>
+    <div class="lightbox-content" id="lightboxContent"></div>
+    <div class="lightbox-actions">
+      <button class="icon-btn" id="lbFav">♥</button>
+      <button class="icon-btn" id="lbAlbum">▣</button>
+      <button class="icon-btn" id="lbDelete">🗑</button>
+    </div>
+  </div>
+
+  <!-- Generic Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal" id="modal">
+      <div class="modal-handle"></div>
+      <h3 id="modalTitle">Title</h3>
+      <div id="modalBody"></div>
+      <div class="modal-btns" id="modalBtns"></div>
+    </div>
+  </div>
+
+  <!-- Hidden file input -->
+  <input type="file" id="fileInput" accept="image/*,video/*,.gif" multiple>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+<script>
+(function() {
+  // ========== DATA ==========
+  const STORAGE_KEY = 'aura_gallery_v1';
+  let data = {
+    items: [],      // {id, type: 'image'|'video'|'gif', src, favorite, albumIds: [], created}
+    albums: [],     // {id, name, itemIds: []}
+    links: [],      // {id, url, label, created}
+    viewMode: 'masonry' // or 'grid'
+  };
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) data = JSON.parse(raw);
+    } catch(e) {}
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch(e) {
+      showToast('Storage full. Try removing some items.');
+    }
+  }
+
+  load();
+
+  // ========== HELPERS ==========
+  const $ = sel => document.querySelector(sel);
+  const $$ = sel => document.querySelectorAll(sel);
+
+  function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+
+  function showToast(msg) {
+    const t = $('#toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  function isImageUrl(url) {
+    return /\.(jpe?g|png|gif|webp|bmp|svg)(\?|$)/i.test(url) || url.startsWith('data:image');
+  }
+
+  function isVideoUrl(url) {
+    return /\.(mp4|webm|ogg|mov)(\?|$)/i.test(url) || url.startsWith('data:video');
+  }
+
+  // ========== RENDER ==========
+  let currentFilter = 'all';
+  let currentAlbumId = null;
+
+  function render() {
+    // Update tabs active state
+    $$('.tab').forEach(t => {
+      t.classList.toggle('active', t.dataset.filter === currentFilter);
+    });
+    $$('.nav-item').forEach(n => {
+      n.classList.toggle('active', n.dataset.nav === currentFilter);
+    });
+
+    // Hide all sections
+    $$('.section').forEach(s => s.classList.remove('active'));
+
+    if (currentFilter === 'all' || currentFilter === 'favorites') {
+      $('#section-all').classList.add('active');
+      renderMasonry();
+    } else if (currentFilter === 'albums') {
+      $('#section-albums').classList.add('active');
+      renderAlbums();
+    } else if (currentFilter === 'videos') {
+      $('#section-videos').classList.add('active');
+      renderVideos();
+    } else if (currentFilter === 'links') {
+      $('#section-links').classList.add('active');
+      renderLinks();
+    }
+
+    // Update view label
+    $('#viewLabel').textContent = data.viewMode === 'masonry' ? 'Switch to Grid View' : 'Switch to Masonry View';
+    const container = $('#masonryContainer');
+    if (container) {
+      container.className = data.viewMode === 'masonry' ? 'masonry' : 'grid-normal';
+    }
+    const vCont = $('#videosContainer');
+    if (vCont) {
+      vCont.className = data.viewMode === 'masonry' ? 'masonry' : 'grid-normal';
+    }
+  }
+
+  function getFilteredItems() {
+    let items = data.items;
+    if (currentFilter === 'favorites') {
+      items = items.filter(i => i.favorite);
+    } else if (currentAlbumId) {
+      items = items.filter(i => i.albumIds && i.albumIds.includes(currentAlbumId));
+    }
+    return items.slice().reverse(); // newest first
+  }
+
+  function createPin(item) {
+    const pin = document.createElement('div');
+    pin.className = 'pin';
+    pin.dataset.id = item.id;
+
+    let media;
+    if (item.type === 'video') {
+      media = document.createElement('video');
+      media.src = item.src;
+      media.muted = true;
+      media.playsInline = true;
+      media.preload = 'metadata';
+      media.setAttribute('playsinline', '');
+    } else {
+      media = document.createElement('img');
+      media.src = item.src;
+      media.loading = 'lazy';
+      media.alt = '';
+    }
+    pin.appendChild(media);
+
+    const overlay = document.createElement('div');
+    overlay.className = 'pin-overlay';
+    overlay.innerHTML = `
+      <div class="pin-actions">
+        <button class="pin-action ${item.favorite ? 'favorited' : ''}" data-act="fav">♥</button>
+        <button class="pin-action" data-act="album">▣</button>
+        <button class="pin-action" data-act="del">🗑</button>
+      </div>
+    `;
+    pin.appendChild(overlay);
+
+    // Long press / click to show actions or open
+    let pressTimer;
+    pin.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('.pin-action')) return;
+      pressTimer = setTimeout(() => {
+        pin.classList.add('show-actions');
+      }, 400);
+    });
+    pin.addEventListener('pointerup', (e) => {
+      clearTimeout(pressTimer);
+      if (e.target.closest('.pin-action')) return;
+      if (!pin.classList.contains('show-actions')) {
+        openLightbox(item);
+      }
+    });
+    pin.addEventListener('pointerleave', () => {
+      clearTimeout(pressTimer);
+      setTimeout(() => pin.classList.remove('show-actions'), 1500);
+    });
+
+    overlay.querySelectorAll('.pin-action').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const act = btn.dataset.act;
+        if (act === 'fav') toggleFavorite(item.id);
+        else if (act === 'album') openAddToAlbum(item.id);
+        else if (act === 'del') deleteItem(item.id);
+      });
+    });
+
+    return pin;
+  }
+
+  function renderMasonry() {
+    const container = $('#masonryContainer');
+    const empty = $('#emptyAll');
+    container.innerHTML = '';
+    const items = getFilteredItems().filter(i => i.type !== 'video' || currentFilter === 'all' || currentFilter === 'favorites');
+
+    // In "all" and "favorites" we show images + gifs primarily; videos have own tab
+    // But user said all photos (and media) on front page. So show everything non-link.
+    const showItems = getFilteredItems();
+
+    if (showItems.length === 0) {
+      empty.classList.remove('hidden');
+      return;
+    }
+    empty.classList.add('hidden');
+
+    showItems.forEach(item => {
+      container.appendChild(createPin(item));
+    });
+  }
+
+  function renderVideos() {
+    const container = $('#videosContainer');
+    const empty = $('#emptyVideos');
+    container.innerHTML = '';
+    const videos = data.items.filter(i => i.type === 'video').reverse();
+
+    if (videos.length === 0) {
+      empty.classList.remove('hidden');
+      return;
+    }
+    empty.classList.add('hidden');
+    videos.forEach(item => container.appendChild(createPin(item)));
+  }
+
+  function renderAlbums() {
+    const list = $('#albumList');
+    const empty = $('#emptyAlbums');
+    list.innerHTML = '';
+
+    if (data.albums.length === 0) {
+      empty.classList.remove('hidden');
+      return;
+    }
+    empty.classList.add('hidden');
+
+    data.albums.forEach(album => {
+      const div = document.createElement('div');
+      div.className = 'album-item';
+      const count = data.items.filter(i => i.albumIds && i.albumIds.includes(album.id)).length;
+      div.innerHTML = `
+        <div>
+          <div class="name">${escapeHtml(album.name)}</div>
+          <div class="count">${count} item${count !== 1 ? 's' : ''}</div>
+        </div>
+        <span style="opacity:0.5">›</span>
+      `;
+      div.addEventListener('click', () => {
+        currentAlbumId = album.id;
+        currentFilter = 'all';
+        // Temporarily filter by album
+        showAlbumView(album);
+      });
+      list.appendChild(div);
+    });
+  }
+
+  function showAlbumView(album) {
+    // Simple: switch to all but filter items of this album
+    currentFilter = 'all';
+    currentAlbumId = album.id;
+    $('#section-all').classList.add('active');
+    $$('.section').forEach(s => { if (s.id !== 'section-all') s.classList.remove('active'); });
+    renderMasonry();
+    showToast(`Viewing: ${album.name}`);
+    // Reset album filter after some time or provide back? For simplicity, next tab switch clears it
+  }
+
+  function renderLinks() {
+    const container = $('#linksContainer');
+    const empty = $('#emptyLinks');
+    container.innerHTML = '';
+
+    if (data.links.length === 0) {
+      empty.classList.remove('hidden');
+      return;
+    }
+    empty.classList.add('hidden');
+
+    data.links.slice().reverse().forEach(link => {
+      const card = document.createElement('div');
+      card.className = 'link-card';
+      card.innerHTML = `
+        <div class="label">${escapeHtml(link.label || 'Link')}</div>
+        <div class="url">${escapeHtml(link.url)}</div>
+        <div class="actions">
+          <button class="link-btn primary" data-act="open">Open</button>
+          <button class="link-btn" data-act="edit">Edit Label</button>
+          <button class="link-btn" data-act="del">Delete</button>
+        </div>
+      `;
+      card.querySelector('[data-act="open"]').addEventListener('click', () => {
+        window.open(link.url, '_blank');
+      });
+      card.querySelector('[data-act="edit"]').addEventListener('click', () => {
+        openEditLinkLabel(link.id);
+      });
+      card.querySelector('[data-act="del"]').addEventListener('click', () => {
+        data.links = data.links.filter(l => l.id !== link.id);
+        save();
+        render();
+        showToast('Link removed');
+      });
+      container.appendChild(card);
+    });
+  }
+
+  function escapeHtml(str) {
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  // ========== ACTIONS ==========
+  function addItem(src, type) {
+    const item = {
+      id: uid(),
+      type: type || (src.startsWith('data:video') || isVideoUrl(src) ? 'video' : 'image'),
+      src,
+      favorite: false,
+      albumIds: [],
+      created: Date.now()
+    };
+    data.items.push(item);
+    save();
+    render();
+    showToast('Added to gallery');
+    return item;
+  }
+
+  function toggleFavorite(id) {
+    const item = data.items.find(i => i.id === id);
+    if (item) {
+      item.favorite = !item.favorite;
+      save();
+      render();
+      showToast(item.favorite ? 'Added to favorites' : 'Removed from favorites');
+    }
+  }
+
+  function deleteItem(id) {
+    data.items = data.items.filter(i => i.id !== id);
+    // Also clean from albums
+    data.albums.forEach(a => {
+      a.itemIds = (a.itemIds || []).filter(iid => iid !== id);
+    });
+    save();
+    closeLightbox();
+    render();
+    showToast('Removed');
+  }
+
+  function addLink(url, label = '') {
+    data.links.push({
+      id: uid(),
+      url,
+      label: label || 'Media Link',
+      created: Date.now()
+    });
+    save();
+    render();
+    showToast('Link saved');
+  }
+
+  // ========== PASTE (much more reliable) ==========
+  function processTextInput(text) {
+    text = (text || '').trim();
+    if (!text) return;
+
+    if (/^https?:\/\//i.test(text) || text.startsWith('data:')) {
+      if (isImageUrl(text) || text.startsWith('data:image')) {
+        addItem(text, 'image');
+      } else if (isVideoUrl(text) || text.startsWith('data:video')) {
+        addItem(text, 'video');
+      } else {
+        openLabelForLink(text);
+      }
+    } else {
+      showToast('Paste an image or a full link');
+    }
+  }
+
+  function handleFiles(fileList) {
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
+
+    files.forEach(file => {
+      if (!file.type) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const type = file.type.startsWith('video') ? 'video' : 'image';
+        addItem(ev.target.result, type);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function handlePasteEvent(e) {
+    const clipboard = e.clipboardData || window.clipboardData;
+    if (!clipboard) return;
+
+    // 1. Prefer image files from clipboard
+    if (clipboard.files && clipboard.files.length > 0) {
+      e.preventDefault();
+      handleFiles(clipboard.files);
+      clearPasteZone();
+      return;
+    }
+
+    // 2. Check clipboard items for images
+    if (clipboard.items) {
+      for (let i = 0; i < clipboard.items.length; i++) {
+        const item = clipboard.items[i];
+        if (item.type && item.type.indexOf('image') !== -1) {
+          e.preventDefault();
+          const blob = item.getAsFile();
+          if (blob) {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+              addItem(ev.target.result, 'image');
+            };
+            reader.readAsDataURL(blob);
+          }
+          clearPasteZone();
+          return;
+        }
+      }
+    }
+
+    // 3. Fallback to text / URL
+    const text = clipboard.getData('text/plain') || clipboard.getData('text') || '';
+    if (text.trim()) {
+      e.preventDefault();
+      processTextInput(text.trim());
+      clearPasteZone();
+    }
+  }
+
+  function clearPasteZone() {
+    const zone = $('#pasteZone');
+    if (zone) {
+      // Keep only the hint
+      zone.innerHTML = `<div class="hint"><strong>Tap here</strong> then long-press → Paste<br>or use the buttons below</div>`;
+    }
+  }
+
+  // Make the paste zone work
+  const pasteZone = $('#pasteZone');
+
+  // Focus styling
+  pasteZone.addEventListener('focus', () => pasteZone.classList.add('active'));
+  pasteZone.addEventListener('blur', () => {
+    pasteZone.classList.remove('active');
+    // Clean any leftover text after a short delay
+    setTimeout(clearPasteZone, 300);
+  });
+
+  // Main paste listener on the zone
+  pasteZone.addEventListener('paste', handlePasteEvent);
+
+  // Also listen on the whole document (helps on some Android browsers)
+  document.addEventListener('paste', (e) => {
+    // If the paste zone is focused or the event has image data, handle it
+    if (document.activeElement === pasteZone || 
+        (e.clipboardData && (e.clipboardData.files.length || 
+         Array.from(e.clipboardData.items || []).some(i => i.type.includes('image'))))) {
+      handlePasteEvent(e);
+    }
+  });
+
+  // Buttons
+  $('#addFileBtn').addEventListener('click', () => {
+    $('#fileInput').click();
+  });
+
+  $('#addLinkBtn').addEventListener('click', () => {
+    openModal('Add a Link', `
+      <p style="margin-bottom:12px;opacity:0.7;font-size:0.9rem">Paste any video or media link below</p>
+      <input class="modal-input" id="manualLinkInput" placeholder="https://...">
+    `, [
+      { text: 'Cancel' },
+      { text: 'Continue', primary: true, onClick: () => {
+        const val = ($('#manualLinkInput')?.value || '').trim();
+        if (val) processTextInput(val);
+        else showToast('Please enter a link');
+      }}
+    ]);
+    setTimeout(() => $('#manualLinkInput')?.focus(), 150);
+  });
+
+  // File input
+  $('#fileInput').addEventListener('change', (e) => {
+    handleFiles(e.target.files);
+    e.target.value = '';
+  });
+
+  // Also support drag & drop on the paste zone (works on some devices)
+  pasteZone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    pasteZone.classList.add('active');
+  });
+  pasteZone.addEventListener('dragleave', () => pasteZone.classList.remove('active'));
+  pasteZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    pasteZone.classList.remove('active');
+    if (e.dataTransfer && e.dataTransfer.files) {
+      handleFiles(e.dataTransfer.files);
+    }
+  });
+
+  // ========== LIGHTBOX + ZOOM ==========
+  let currentItem = null;
+  let scale = 1;
+  let lastDist = 0;
+  let isPinching = false;
+  let startX = 0, startY = 0, translateX = 0, translateY = 0;
+
+  function openLightbox(item) {
+    currentItem = item;
+    scale = 1;
+    translateX = 0;
+    translateY = 0;
+    const content = $('#lightboxContent');
+    content.innerHTML = '';
+
+    let media;
+    if (item.type === 'video') {
+      media = document.createElement('video');
+      media.src = item.src;
+      media.controls = true;
+      media.playsInline = true;
+      media.autoplay = true;
+    } else {
+      media = document.createElement('img');
+      media.src = item.src;
+    }
+    media.id = 'lbMedia';
+    content.appendChild(media);
+
+    $('#lbFav').textContent = item.favorite ? '♥' : '♡';
+    $('#lbFav').style.color = item.favorite ? '#ff6b9d' : '';
+
+    $('#lightbox').classList.add('open');
+  }
+
+  function closeLightbox() {
+    $('#lightbox').classList.remove('open');
+    currentItem = null;
+    const v = $('#lightboxContent video');
+    if (v) v.pause();
+  }
+
+  $('#lightboxClose').addEventListener('click', closeLightbox);
+  $('#lightbox').addEventListener('click', (e) => {
+    if (e.target === $('#lightbox')) closeLightbox();
+  });
+
+  $('#lbFav').addEventListener('click', () => {
+    if (currentItem) {
+      toggleFavorite(currentItem.id);
+      $('#lbFav').textContent = currentItem.favorite ? '♥' : '♡';
+      $('#lbFav').style.color = currentItem.favorite ? '#ff6b9d' : '';
+    }
+  });
+
+  $('#lbDelete').addEventListener('click', () => {
+    if (currentItem) deleteItem(currentItem.id);
+  });
+
+  $('#lbAlbum').addEventListener('click', () => {
+    if (currentItem) openAddToAlbum(currentItem.id);
+  });
+
+  // Pinch zoom
+  const lbContent = $('#lightboxContent');
+  lbContent.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      isPinching = true;
+      lastDist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+    } else if (e.touches.length === 1 && scale > 1) {
+      startX = e.touches[0].clientX - translateX;
+      startY = e.touches[0].clientY - translateY;
+    }
+  }, {passive: false});
+
+  lbContent.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    const media = $('#lbMedia');
+    if (!media) return;
+
+    if (e.touches.length === 2 && isPinching) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const delta = dist / lastDist;
+      scale = Math.min(Math.max(0.8, scale * delta), 5);
+      lastDist = dist;
+      media.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+    } else if (e.touches.length === 1 && scale > 1) {
+      translateX = e.touches[0].clientX - startX;
+      translateY = e.touches[0].clientY - startY;
+      media.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+    }
+  }, {passive: false});
+
+  lbContent.addEventListener('touchend', () => {
+    isPinching = false;
+    if (scale < 1) {
+      scale = 1;
+      translateX = 0;
+      translateY = 0;
+      const media = $('#lbMedia');
+      if (media) media.style.transform = '';
+    }
+  });
+
+  // Double tap zoom
+  let lastTap = 0;
+  lbContent.addEventListener('click', (e) => {
+    const now = Date.now();
+    if (now - lastTap < 300) {
+      const media = $('#lbMedia');
+      if (media) {
+        if (scale > 1) {
+          scale = 1;
+          translateX = 0;
+          translateY = 0;
+        } else {
+          scale = 2.5;
+        }
+        media.style.transform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+      }
+    }
+    lastTap = now;
+  });
+
+  // ========== MODALS ==========
+  function openModal(title, bodyHtml, buttons) {
+    $('#modalTitle').textContent = title;
+    $('#modalBody').innerHTML = bodyHtml;
+    const btns = $('#modalBtns');
+    btns.innerHTML = '';
+    buttons.forEach(b => {
+      const btn = document.createElement('button');
+      btn.className = 'modal-btn ' + (b.primary ? 'confirm' : 'cancel');
+      btn.textContent = b.text;
+      btn.addEventListener('click', () => {
+        if (b.onClick) b.onClick();
+        if (b.close !== false) closeModal();
+      });
+      btns.appendChild(btn);
+    });
+    $('#modalOverlay').classList.add('open');
+  }
+
+  function closeModal() {
+    $('#modalOverlay').classList.remove('open');
+  }
+
+  $('#modalOverlay').addEventListener('click', (e) => {
+    if (e.target === $('#modalOverlay')) closeModal();
+  });
+
+  function openAddToAlbum(itemId) {
+    let body = '<div class="album-list">';
+    if (data.albums.length === 0) {
+      body += '<p style="opacity:0.6;margin-bottom:12px">No albums yet. Create one first.</p>';
+    } else {
+      data.albums.forEach(a => {
+        body += `<div class="album-item" data-aid="${a.id}"><div class="name">${escapeHtml(a.name)}</div></div>`;
+      });
+    }
+    body += '</div>';
+    body += '<input class="modal-input" id="newAlbumName" placeholder="Or type new album name…">';
+
+    openModal('Add to Album', body, [
+      { text: 'Cancel' },
+      { text: 'Save', primary: true, onClick: () => {
+        const newName = ($('#newAlbumName')?.value || '').trim();
+        let targetAlbumId = null;
+
+        // Check if user clicked an existing one (we need to track selection)
+        // Simpler: if new name given, create; else use first selected via event
+        if (newName) {
+          const album = { id: uid(), name: newName, itemIds: [] };
+          data.albums.push(album);
+          targetAlbumId = album.id;
+        }
+
+        // For simplicity in this version: if new name, add to it.
+        // Also allow selecting existing by making them toggleable
+        if (targetAlbumId) {
+          const item = data.items.find(i => i.id === itemId);
+          if (item) {
+            if (!item.albumIds) item.albumIds = [];
+            if (!item.albumIds.includes(targetAlbumId)) {
+              item.albumIds.push(targetAlbumId);
+            }
+            save();
+            showToast('Added to album');
+          }
+        } else {
+          showToast('Enter a name or create an album first');
+        }
+      }}
+    ]);
+
+    // Make existing albums clickable to add immediately
+    setTimeout(() => {
+      $$('#modalBody .album-item').forEach(el => {
+        el.addEventListener('click', () => {
+          const aid = el.dataset.aid;
+          const item = data.items.find(i => i.id === itemId);
+          if (item) {
+            if (!item.albumIds) item.albumIds = [];
+            if (!item.albumIds.includes(aid)) {
+              item.albumIds.push(aid);
+              save();
+              showToast('Added to album');
+              closeModal();
+            } else {
+              showToast('Already in this album');
+            }
+          }
+        });
+      });
+    }, 50);
+  }
+
+  function openLabelForLink(url) {
+    openModal('Add Link Label', `
+      <p style="margin-bottom:12px;opacity:0.7;font-size:0.9rem">Give this link a short label so you remember what it is.</p>
+      <input class="modal-input" id="linkLabelInput" placeholder="e.g. podcast, song, clip…" value="">
+      <input type="hidden" id="linkUrlHidden" value="${escapeHtml(url)}">
+    `, [
+      { text: 'Cancel' },
+      { text: 'Save Link', primary: true, onClick: () => {
+        const label = ($('#linkLabelInput')?.value || '').trim() || 'Media Link';
+        const u = $('#linkUrlHidden')?.value || url;
+        addLink(u, label);
+      }}
+    ]);
+    setTimeout(() => $('#linkLabelInput')?.focus(), 100);
+  }
+
+  function openEditLinkLabel(linkId) {
+    const link = data.links.find(l => l.id === linkId);
+    if (!link) return;
+    openModal('Edit Label', `
+      <input class="modal-input" id="editLabelInput" value="${escapeHtml(link.label)}">
+    `, [
+      { text: 'Cancel' },
+      { text: 'Save', primary: true, onClick: () => {
+        const val = ($('#editLabelInput')?.value || '').trim();
+        if (val) {
+          link.label = val;
+          save();
+          render();
+          showToast('Label updated');
+        }
+      }}
+    ]);
+  }
+
+  // Create album
+  $('#createAlbumBtn').addEventListener('click', () => {
+    openModal('New Album', `
+      <input class="modal-input" id="albumNameInput" placeholder="Album name…">
+    `, [
+      { text: 'Cancel' },
+      { text: 'Create', primary: true, onClick: () => {
+        const name = ($('#albumNameInput')?.value || '').trim();
+        if (name) {
+          data.albums.push({ id: uid(), name, itemIds: [] });
+          save();
+          render();
+          showToast('Album created');
+        }
+      }}
+    ]);
+    setTimeout(() => $('#albumNameInput')?.focus(), 100);
+  });
+
+  // ========== NAV & TABS ==========
+  $$('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      currentFilter = tab.dataset.filter;
+      currentAlbumId = null;
+      render();
+    });
+  });
+
+  $$('.nav-item').forEach(nav => {
+    nav.addEventListener('click', () => {
+      currentFilter = nav.dataset.nav;
+      currentAlbumId = null;
+      render();
+    });
+  });
+
+  // View toggle
+  function toggleView() {
+    data.viewMode = data.viewMode === 'masonry' ? 'grid' : 'masonry';
+    save();
+    render();
+    showToast(data.viewMode === 'masonry' ? 'Masonry view' : 'Grid view');
+  }
+
+  $('#viewToggleBtn').addEventListener('click', toggleView);
+
+  // Menu
+  $('#menuBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    $('#menuDropdown').classList.toggle('open');
+  });
+
+  document.addEventListener('click', () => {
+    $('#menuDropdown').classList.remove('open');
+  });
+
+  $$('#menuDropdown .menu-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const action = item.dataset.action;
+      $('#menuDropdown').classList.remove('open');
+      if (action === 'toggle-view') toggleView();
+      else if (action === 'export') {
+        const blob = new Blob([JSON.stringify(data)], {type: 'application/json'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'aura-gallery-backup.json';
+        a.click();
+        showToast('Exported');
+      } else if (action === 'import') {
+        const inp = document.createElement('input');
+        inp.type = 'file';
+        inp.accept = '.json';
+        inp.onchange = (ev) => {
+          const file = ev.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (r) => {
+            try {
+              const imported = JSON.parse(r.target.result);
+              if (imported.items) {
+                data = imported;
+                save();
+                render();
+                showToast('Imported successfully');
+              }
+            } catch(err) {
+              showToast('Invalid file');
+            }
+          };
+          reader.readAsText(file);
+        };
+        inp.click();
+      } else if (action === 'clear') {
+        openModal('Clear Everything?', '<p style="opacity:0.8">This will permanently delete all items, albums and links from this device.</p>', [
+          { text: 'Cancel' },
+          { text: 'Clear All', primary: true, onClick: () => {
+            data = { items: [], albums: [], links: [], viewMode: 'masonry' };
+            save();
+            render();
+            showToast('Gallery cleared');
+          }}
+        ]);
+      }
+    });
+  });
+
+  // FAB
+  $('#fabBtn').addEventListener('click', () => {
+    $('#fileInput').click();
+  });
+
+  // Initial render
+  render();
+
+  // Prevent pull-to-refresh on some browsers
+  document.body.addEventListener('touchmove', (e) => {
+    if (e.target.closest('.lightbox')) e.preventDefault();
+  }, {passive: false});
+
+})();
+</script>
+</body>
+</html>
